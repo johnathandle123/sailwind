@@ -10,6 +10,11 @@ import {
   BarChart3,
   Search,
   MessagesSquare,
+  Sparkles,
+  Layers,
+  FileSearch,
+  EyeOff,
+  CircleCheck,
 } from 'lucide-react'
 
 const meta = {
@@ -106,5 +111,60 @@ export const Hidden: Story = {
     pages: sitePages,
     showNavigation: false,
     userName: 'Jane Doe',
+  },
+}
+
+/**
+ * A document processing site: an assistant and a home page as direct links, then one group
+ * per kind of processing, each holding the same two views. Taken from the Doc Center
+ * prototype, where the sections are what the navigation is mostly made of — so most rows
+ * are groups, and the selected child sits inside an open one.
+ */
+const docCenterPages: SiteNavPage[] = [
+  { label: 'Doc Center Assistant', icon: Sparkles },
+  { label: 'Home', icon: Home },
+  {
+    label: 'Classification',
+    icon: Layers,
+    isGroup: true,
+    children: [{ label: 'Models' }, { label: 'Instances' }],
+  },
+  {
+    label: 'Extraction',
+    icon: FileSearch,
+    isGroup: true,
+    children: [{ label: 'Models' }, { label: 'Instances' }],
+  },
+  {
+    label: 'Redaction',
+    icon: EyeOff,
+    isGroup: true,
+    isSelected: true,
+    children: [{ label: 'Models', isSelected: true }, { label: 'Instances' }],
+  },
+  {
+    label: 'Verification',
+    icon: CircleCheck,
+    isGroup: true,
+    children: [{ label: 'Models' }, { label: 'Instances' }],
+  },
+]
+
+export const DocCenter: Story = {
+  args: {
+    displayName: 'Doc Center',
+    pages: docCenterPages,
+    userName: 'Johnathan Le',
+    highlightColor: 'ACCENT',
+  },
+}
+
+export const DocCenterCollapsed: Story = {
+  args: {
+    displayName: 'Doc Center',
+    pages: docCenterPages,
+    collapsed: true,
+    userName: 'Johnathan Le',
+    highlightColor: 'ACCENT',
   },
 }
