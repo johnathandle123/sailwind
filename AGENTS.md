@@ -179,6 +179,38 @@ const sizeMap: Record<SAILSize, string> = {
 <ToggleField choiceLabel="Enable Notifications" value={true} saveInto={setValue} />
 ```
 
+### Milestone (stepper)
+```tsx
+// NUMBERED (default): numbered/checked circles, connectors, "STEP n" caption + status text
+<MilestoneField steps={["Card Details", "Form Review", "Create Code"]} active={1} />
+
+// MINIMAL: chevron-separated row, only the current step is highlighted as a pill
+<MilestoneField steps={["Step 1", "Step 2", "Step 3"]} active={1} stepStyle="MINIMAL" />
+```
+`LINE`, `DOT`, and `CHEVRON` remain available. Steps render as an ordered list with
+`aria-current="step"` on the current step, and each step's state is exposed as text,
+so never rely on `color` alone to communicate progress.
+
+### Icon hover animations (shipped utilities in `index.css`)
+```tsx
+// Put `group` on the hover target, then tag the SVG geometry:
+// sw-icon-draw (+ -2/-3 stagger) | sw-icon-slash | sw-icon-pile (+ -2/-3)
+// sw-icon-sweep | sw-icon-twinkle (+ -2/-3)
+<button className="group ...">{/* icon with sw-icon-* on its paths */}</button>
+```
+Ported from the Doc Center nav. `draw`/`slash` need `pathLength="1"` on the animated
+geometry. All of them stop under `prefers-reduced-motion: reduce`. See
+**Components/Icons → Animations** in Storybook.
+
+### Dialog appearance
+```tsx
+// GLASS = translucent surface + blurred backdrop; falls back to opaque for
+// prefers-reduced-transparency and forced-colors
+<DialogField appearance="GLASS" title="Payment details">...</DialogField>
+```
+Use strong foreground colors (`text-gray-900`, solid buttons) for content inside a
+GLASS dialog — muted grays can fall below 4.5:1 over a dark backdrop.
+
 ### ButtonToggle (button-style on/off toggle)
 ```tsx
 <ButtonToggle text="Bold" icon="bold" style="SOLID" value={pressed} saveInto={setPressed} />
