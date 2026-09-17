@@ -1,6 +1,8 @@
 import * as React from 'react'
 import * as LucideIcons from 'lucide-react'
-import type { SAILSize, SAILColorInput } from '../../types/sail'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { ChevronDown } from 'lucide-react'
+import type { SAILSize, SAILColorInput, SAILAlign } from '../../types/sail'
 import { mergeClasses } from '../../utils/classNames'
 import { resolveColorClass, isSemanticColor, isPaletteColor } from '../../utils/colorResolver'
 import { buttonSizeMap, buttonIconOnlySizeMap } from '../../utils/sailMaps'
@@ -8,6 +10,19 @@ import { buttonSizeMap, buttonIconOnlySizeMap } from '../../utils/sailMaps'
 type ButtonStyle = "SOLID" | "OUTLINE" | "GHOST" | "LINK"
 type ButtonWidth = "MINIMIZE" | "FILL"
 type IconPosition = "START" | "END"
+
+/**
+ * How the button exposes a set of choices.
+ *
+ * - `NONE` — an ordinary button (default)
+ * - `MENU` — the whole button opens a menu of choices; a caret is added after the label
+ * - `SPLIT` — the label runs the primary action, and an attached caret opens the menu
+ *
+ * Menu layouts are a Sailwind addition, not an official SAIL parameter. The choice
+ * parameters deliberately reuse `DropdownField`'s vocabulary (`choiceLabels`,
+ * `choiceValues`, `saveInto`, `placeholder`) so the two components read the same way.
+ */
+export type ButtonMenuLayout = "NONE" | "MENU" | "SPLIT"
 
 /**
  * Props for the ButtonWidget component
@@ -59,6 +74,32 @@ export interface ButtonWidgetProps {
   saveInto?: (value?: any) => void
   /** Click handler (React-style alias for saveInto) */
   onClick?: (value?: any) => void
+  /**
+   * Turns the button into a menu button. `MENU` opens the menu from the whole button,
+   * `SPLIT` keeps the label as the primary action and adds an attached caret.
+   */
+  menuLayout?: ButtonMenuLayout
+  /** Array of menu options for the user to select (same parameter as DropdownField) */
+  choiceLabels?: any[]
+  /** Array of values associated with the corresponding choices (same as DropdownField) */
+  choiceValues?: any[]
+  /** Optional Lucide icon name per choice, aligned with choiceLabels */
+  choiceIcons?: string[]
+  /** Optional secondary line per choice, aligned with choiceLabels */
+  choiceDescriptions?: string[]
+  /** Disables individual choices, aligned with choiceLabels */
+  choiceDisabled?: boolean[]
+  /**
+   * Callback when a menu choice is picked, receiving that choice's value.
+   * Falls back to `saveInto` when not provided.
+   */
+  menuSaveInto?: (value: any) => void
+  /** Which edge of the button the menu aligns to */
+  menuAlign?: SAILAlign
+  /** Heading shown above the choices */
+  menuLabel?: string
+  /** Accessible name for the caret trigger in the SPLIT layout */
+  menuAccessibilityText?: string
   /** Additional Tailwind classes for prototype-specific styling (not part of SAIL API) */
   className?: string
 }
@@ -87,6 +128,16 @@ export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
   saveInto,
   onClick,
   value,
+  menuLayout = "NONE",
+  choiceLabels = [],
+  choiceValues = [],
+  choiceIcons = [],
+  choiceDescriptions = [],
+  choiceDisabled = [],
+  menuSaveInto,
+  menuAlign = "START",
+  menuLabel,
+  menuAccessibilityText,
   className
 }) => {
   // Visibility control
@@ -276,6 +327,137 @@ export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
 
   const IconElement = getIconComponent()
   const inlineStyles = getInlineStyles()
+
+  /* ── Menu layouts ─────────────────────────────────────────────────────────
+     Built on Radix DropdownMenu so the trigger gets aria-haspopup/aria-expanded,
+     and the menu gets roving focus, type-ahead, Escape, and focus return for free. */
+
+  const hasMenu = menuLayout !== "NONE" && choiceLabels.length > 0
+  const caretSize: Record<SAILSize, number> = { SMALL: 14, STANDARD: 16, MEDIUM: 18, LARGE: 20 }
+
+  const handleChoice = (index: number) => {
+    const chosen = choiceValues.length > index ? choiceValues[index] : choiceLabels[index]
+    const handler = menuSaveInto || onClick || saveInto
+    handler?.(chosen)
+  }
+
+  const menuContent = (
+    <DropdownMenu.Portal>
+      <DropdownMenu.Content
+        align={menuAlign === "END" ? "end" : menuAlign === "CENTER" ? "center" : "start"}
+        sideOffset={4}
+        /* Panel styling matches DropdownField's option list so the two read as one system */
+        className="z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] max-h-60 overflow-hidden rounded-sm border border-gray-300 bg-white shadow-lg"
+      >
+        <div className="max-h-48 overflow-y-auto">
+          {menuLabel && (
+            <DropdownMenu.Label className="px-3 py-2 text-sm text-gray-700">
+              {menuLabel}
+            </DropdownMenu.Label>
+          )}
+          {choiceLabels.map((choiceLabel, index) => {
+            const ChoiceIcon = choiceIcons[index]
+              ? (LucideIcons as any)[
+                  choiceIcons[index].split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('')
+                ]
+              : null
+
+            return (
+              <DropdownMenu.Item
+                key={index}
+                disabled={choiceDisabled[index] === true}
+                onSelect={() => handleChoice(index)}
+                className="flex w-full cursor-pointer items-start gap-2 px-3 py-2 text-left text-base outline-none hover:bg-gray-100 data-[highlighted]:bg-gray-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+              >
+                {ChoiceIcon && (
+                  <span className="mt-0.5 shrink-0 text-gray-700">
+                    <ChoiceIcon size={16} aria-hidden="true" />
+                  </span>
+                )}
+                <span className="flex-1">
+                  <span className="block">{choiceLabel}</span>
+                  {choiceDescriptions[index] && (
+                    <span className="block text-sm text-gray-700">{choiceDescriptions[index]}</span>
+                  )}
+                </span>
+              </DropdownMenu.Item>
+            )
+          })}
+        </div>
+      </DropdownMenu.Content>
+    </DropdownMenu.Portal>
+  )
+
+  if (hasMenu && menuLayout === "MENU") {
+    return (
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild disabled={disabled || loadingIndicator}>
+          <button
+            type="button"
+            disabled={disabled || loadingIndicator}
+            className={finalClasses}
+            style={inlineStyles}
+            aria-label={accessibilityText || label || tooltip}
+            title={tooltip}
+          >
+            {IconElement && iconPosition === "START" && IconElement}
+            {label && <span>{label}</span>}
+            {IconElement && iconPosition === "END" && IconElement}
+            <ChevronDown size={caretSize[size]} aria-hidden="true" />
+          </button>
+        </DropdownMenu.Trigger>
+        {menuContent}
+      </DropdownMenu.Root>
+    )
+  }
+
+  if (hasMenu && menuLayout === "SPLIT") {
+    // The caret is a sibling button so the primary action stays one click away.
+    const splitPrimaryClasses = mergeClasses(finalClasses, 'rounded-r-none')
+    const splitCaretClasses = mergeClasses(
+      [
+        'inline-flex items-center justify-center',
+        'font-medium transition-colors h-auto rounded-sm rounded-l-none -ml-px',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+        buttonIconOnlySizeMap[size],
+        getColorClasses(),
+        (disabled || loadingIndicator) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+      ].filter(Boolean).join(' '),
+      className
+    )
+
+    return (
+      <span className="inline-flex items-stretch">
+        <button
+          type={submit ? "submit" : "button"}
+          onClick={handleClick}
+          disabled={disabled || loadingIndicator}
+          className={splitPrimaryClasses}
+          style={inlineStyles}
+          aria-label={accessibilityText || label || tooltip}
+          title={tooltip}
+        >
+          {IconElement && iconPosition === "START" && IconElement}
+          {label && <span>{label}</span>}
+          {IconElement && iconPosition === "END" && IconElement}
+        </button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild disabled={disabled || loadingIndicator}>
+            <button
+              type="button"
+              disabled={disabled || loadingIndicator}
+              className={splitCaretClasses}
+              style={inlineStyles}
+              aria-label={menuAccessibilityText || (label ? `More ${label} options` : 'More options')}
+            >
+              <ChevronDown size={caretSize[size]} aria-hidden="true" />
+            </button>
+          </DropdownMenu.Trigger>
+          {menuContent}
+        </DropdownMenu.Root>
+      </span>
+    )
+  }
 
   return (
     <button
