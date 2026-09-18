@@ -208,6 +208,10 @@ export const DropdownFieldBase: React.FC<DropdownFieldBaseProps> = ({
         aria-haspopup="listbox"
         aria-invalid={showValidations}
         aria-describedby={instructions ? `${inputId}-instructions` : undefined}
+        // A COLLAPSED label renders as an unassociated sr-only span, so the trigger
+        // would otherwise have no accessible name beyond its current selection.
+        // Mirrors TextField's handling.
+        aria-label={accessibilityText || (labelPosition === "COLLAPSED" ? label : undefined)}
       >
         <span className={selectedValues.length === 0 ? 'text-gray-500' : 'text-gray-900'}>
           {getDisplayText()}

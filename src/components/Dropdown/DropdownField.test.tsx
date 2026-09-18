@@ -304,3 +304,54 @@ describe("MultipleDropdownField - multi-select behavior", () => {
     expect(checkboxes[2]).not.toBeChecked(); // Blue
   });
 });
+
+// ─── Accessible name ─────────────────────────────────────────────────────────
+
+describe("DropdownField - accessible name", () => {
+  it("names the trigger from the label when the label is visible", () => {
+    render(<DropdownField {...choices} label="Match type" />);
+    expect(screen.getByRole("button", { name: "Match type" })).toBeInTheDocument();
+  });
+
+  it("names the trigger from the label when labelPosition is COLLAPSED", () => {
+    // A COLLAPSED label renders as an unassociated sr-only span, so without an
+    // explicit aria-label the trigger has no accessible name at all.
+    render(
+      <DropdownField {...choices} label="Match type" labelPosition="COLLAPSED" />
+    );
+    expect(screen.getByRole("button", { name: "Match type" })).toBeInTheDocument();
+  });
+
+  it("prefers accessibilityText over the label when collapsed", () => {
+    render(
+      <DropdownField
+        {...choices}
+        label="Match type"
+        accessibilityText="Match type for this field"
+        labelPosition="COLLAPSED"
+      />
+    );
+    expect(
+      screen.getByRole("button", { name: "Match type for this field" })
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the visible label as the name and the selection in the content", () => {
+    render(<DropdownField {...choices} label="Match type" value="red" />);
+    // With the label visible no aria-label is set, so the label supplies the name
+    // and the current selection stays readable as the trigger's own text.
+    const trigger = screen.getByRole("button", { name: "Match type" });
+    expect(trigger).toHaveTextContent("Red");
+  });
+
+  it("names a collapsed MultipleDropdownField trigger", () => {
+    render(
+      <MultipleDropdownField
+        {...choices}
+        label="Statuses"
+        labelPosition="COLLAPSED"
+      />
+    );
+    expect(screen.getByRole("button", { name: "Statuses" })).toBeInTheDocument();
+  });
+});
