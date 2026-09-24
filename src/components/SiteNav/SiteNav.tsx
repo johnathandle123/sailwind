@@ -217,8 +217,8 @@ export const SiteNav: React.FC<SiteNavProps> = ({
 }
 
 /**
- * Timing shared by the group expand/collapse animation and the chevron rotation,
- * matching the Doc Center prototype: 300ms on a decelerating curve.
+ * Timing shared by the group expand/collapse animation and the chevron rotation:
+ * 300ms on a decelerating curve.
  */
 const EXPAND_TRANSITION = 'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none motion-reduce:duration-0'
 

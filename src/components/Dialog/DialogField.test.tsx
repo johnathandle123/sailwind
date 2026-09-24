@@ -195,7 +195,7 @@ describe("DialogField - width/height classes", () => {
   });
 });
 
-describe("DialogField - appearance", () => {
+describe("DialogField - background", () => {
   it("defaults to the STANDARD opaque surface", () => {
     render(
       <DialogField open={true} title="T">
@@ -203,26 +203,26 @@ describe("DialogField - appearance", () => {
       </DialogField>
     );
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAttribute("data-appearance", "standard");
+    expect(dialog).toHaveAttribute("data-background", "standard");
     expect(dialog.className).toContain("bg-white");
     expect(dialog.className).not.toContain("backdrop-blur-xl");
   });
 
-  it("applies the translucent glass surface when appearance is GLASS", () => {
+  it("applies the translucent glass surface when background is GLASS", () => {
     render(
-      <DialogField open={true} title="T" appearance="GLASS">
+      <DialogField open={true} title="T" background="GLASS">
         <p>Content</p>
       </DialogField>
     );
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAttribute("data-appearance", "glass");
+    expect(dialog).toHaveAttribute("data-background", "glass");
     expect(dialog.className).toContain("bg-white/70");
     expect(dialog.className).toContain("backdrop-blur-xl");
   });
 
   it("falls back to an opaque surface for reduced transparency and forced colors", () => {
     render(
-      <DialogField open={true} title="T" appearance="GLASS">
+      <DialogField open={true} title="T" background="GLASS">
         <p>Content</p>
       </DialogField>
     );
@@ -236,7 +236,7 @@ describe("DialogField - appearance", () => {
 
   it("keeps the description at full-strength text color on glass", () => {
     render(
-      <DialogField open={true} title="T" description="Readable" appearance="GLASS">
+      <DialogField open={true} title="T" description="Readable" background="GLASS">
         <p>Content</p>
       </DialogField>
     );

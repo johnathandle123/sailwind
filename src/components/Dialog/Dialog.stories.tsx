@@ -14,7 +14,7 @@ const meta = {
   argTypes: {
     width: { control: 'select', options: ['NARROW', 'MEDIUM', 'MEDIUM_PLUS', 'WIDE', 'FIT'] },
     height: { control: 'select', options: ['AUTO', 'FIT', 'SHORT', 'MEDIUM', 'TALL'] },
-    appearance: { control: 'inline-radio', options: ['STANDARD', 'GLASS'] },
+    background: { control: 'inline-radio', options: ['STANDARD', 'GLASS'] },
   },
 } satisfies Meta<typeof DialogField>
 
@@ -266,28 +266,28 @@ const GlassBackdrop = () => (
  * - The switch is a real labeled control (`ToggleField`), so it is reachable by
  *   keyboard and announced as "Glassmorphism, switch".
  */
-export const AppearanceToggle: Story = {
+export const BackgroundToggle: Story = {
   args: {
     children: null,
-    title: 'Dialog appearance',
+    title: 'Dialog background',
   },
   render: () => {
-    const [open, setOpen] = useState(true)
+    const [open, setOpen] = useState(false)
     const [glass, setGlass] = useState(true)
 
     return (
       <>
-        <GlassBackdrop />
+        {open && <GlassBackdrop />}
         <DialogField
           open={open}
           onOpenChange={setOpen}
-          appearance={glass ? 'GLASS' : 'STANDARD'}
+          background={glass ? 'GLASS' : 'STANDARD'}
           trigger={
-            <button className={`${btnSolid} bg-white text-blue-500 hover:bg-blue-50`}>
+            <button className={`${btnOutline} border-blue-500 text-blue-500 bg-white hover:bg-blue-100`}>
               Open Dialog
             </button>
           }
-          title="Dialog appearance"
+          title="Dialog background"
           description={
             glass
               ? 'New: glassmorphism — translucent surface with a blurred backdrop.'
@@ -324,40 +324,68 @@ export const AppearanceToggle: Story = {
       </>
     )
   },
-  play: async () => {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
     const body = within(document.body)
-    const dialog = body.getByRole('dialog')
-    await expect(dialog).toHaveAttribute('data-appearance', 'glass')
+    await userEvent.click(canvas.getByRole('button', { name: /open dialog/i }))
+    await expect(body.getByRole('dialog')).toHaveAttribute('data-background', 'glass')
     await userEvent.click(body.getByRole('switch', { name: /glassmorphism/i }))
-    await expect(body.getByRole('dialog')).toHaveAttribute('data-appearance', 'standard')
+    await expect(body.getByRole('dialog')).toHaveAttribute('data-background', 'standard')
     await userEvent.click(body.getByRole('switch', { name: /glassmorphism/i }))
-    await expect(body.getByRole('dialog')).toHaveAttribute('data-appearance', 'glass')
+    await expect(body.getByRole('dialog')).toHaveAttribute('data-background', 'glass')
+
+    await userEvent.click(body.getByRole('button', { name: 'Close' }))
+    await expect(body.queryByRole('dialog')).not.toBeInTheDocument()
   },
 }
 
-/** The glass surface on its own, without the switch. */
+/**
+ * The glass surface on its own, without the switch. Controlled by `open`/`onOpenChange`
+ * so the header close button works — a dialog given a hard-coded `open={true}` renders
+ * a close button that cannot close anything.
+ */
 export const GlassDialog: Story = {
   args: {
     children: null,
     title: 'Glass',
   },
-  render: () => (
-    <>
-      <GlassBackdrop />
-      <DialogField
-        open={true}
-        appearance="GLASS"
-        title="Payment details"
-        description="Your card is charged when the order ships."
-        width="MEDIUM"
-        height="AUTO"
-        showCloseButton={true}
-      >
-        <p className="text-sm text-gray-900">
-          A translucent surface over a blurred backdrop, with a soft border and shadow
-          to keep the panel edges legible.
-        </p>
-      </DialogField>
-    </>
-  ),
+  render: () => {
+    const [open, setOpen] = useState(false)
+
+    return (
+      <>
+        {open && <GlassBackdrop />}
+        <DialogField
+          open={open}
+          onOpenChange={setOpen}
+          background="GLASS"
+          trigger={
+            <button className={`${btnOutline} border-blue-500 text-blue-500 bg-white hover:bg-blue-100`}>
+              Open Glass Dialog
+            </button>
+          }
+          title="Payment details"
+          description="Your card is charged when the order ships."
+          width="MEDIUM"
+          height="AUTO"
+          showCloseButton={true}
+        >
+          <p className="text-sm text-gray-900">
+            A translucent surface over a blurred backdrop, with a soft border and shadow
+            to keep the panel edges legible.
+          </p>
+        </DialogField>
+      </>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+
+    await userEvent.click(canvas.getByRole('button', { name: /open glass dialog/i }))
+    await expect(body.getByRole('dialog')).toHaveAttribute('data-background', 'glass')
+
+    await userEvent.click(body.getByRole('button', { name: /close/i }))
+    await expect(body.queryByRole('dialog')).not.toBeInTheDocument()
+  },
 }

@@ -245,8 +245,7 @@
 
 /* ═══════════════════════════════════════════════════════════════════
    Icon hover animations
-   Ported from the Doc Center prototype's left nav icons. Apply a
-   `sw-icon-*` class to the geometry inside an SVG and put Tailwind's
+   Apply a `sw-icon-*` class to the geometry inside an SVG and put Tailwind's
    `group` class on the hover target (the nav row, button, or card).
    `draw` and `slash` require pathLength="1" on the animated geometry
    so the dash math works for any icon size or path length.

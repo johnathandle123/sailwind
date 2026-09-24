@@ -18,12 +18,12 @@ export type DialogHeight = "AUTO" | "FIT" | "SHORT" | "MEDIUM" | "TALL" | "EXTRA
 /**
  * Surface treatment for the dialog.
  *
- * - `STANDARD` — opaque white card (original appearance)
+ * - `STANDARD` — opaque white card (the default)
  * - `GLASS` — glassmorphism: translucent surface with a blurred backdrop.
  *   Falls back to an opaque surface when the user prefers reduced transparency
  *   or when forced colors (high contrast) mode is active.
  */
-export type DialogAppearance = "STANDARD" | "GLASS"
+export type DialogBackground = "STANDARD" | "GLASS"
 
 /**
  * Displays a modal dialog overlay with customizable content
@@ -50,7 +50,7 @@ export interface DialogFieldProps {
   /** Height of the dialog */
   height?: DialogHeight
   /** Surface treatment: opaque (STANDARD) or translucent glassmorphism (GLASS) */
-  appearance?: DialogAppearance
+  background?: DialogBackground
   /** Whether to show the close button */
   showCloseButton?: boolean
   /** Whether clicking outside closes the dialog */
@@ -78,7 +78,7 @@ export const DialogField: React.FC<DialogFieldProps> = ({
   children,
   width = "MEDIUM",
   height = "AUTO",
-  appearance = "STANDARD",
+  background = "STANDARD",
   showCloseButton = true,
   closeOnOutsideClick = true,
   closeOnEscape = true,
@@ -115,7 +115,7 @@ export const DialogField: React.FC<DialogFieldProps> = ({
   // transparency or is in forced-colors mode, so text never sits on a busy blur.
   const reducedTransparency = '[@media(prefers-reduced-transparency:reduce)]'
 
-  const overlayAppearanceMap: Record<DialogAppearance, string> = {
+  const overlayBackgroundMap: Record<DialogBackground, string> = {
     STANDARD: 'bg-black/50',
     GLASS: [
       'bg-black/40 backdrop-blur-sm',
@@ -124,7 +124,7 @@ export const DialogField: React.FC<DialogFieldProps> = ({
     ].join(' ')
   }
 
-  const contentAppearanceMap: Record<DialogAppearance, string> = {
+  const contentBackgroundMap: Record<DialogBackground, string> = {
     STANDARD: 'bg-white border border-gray-200 shadow-lg',
     GLASS: [
       // 70% white keeps body text (gray-900) above 6:1 contrast over any backdrop
@@ -155,13 +155,13 @@ export const DialogField: React.FC<DialogFieldProps> = ({
 
   const dialogContent = (
     <Dialog.Portal>
-      <Dialog.Overlay className={`fixed inset-0 ${overlayAppearanceMap[appearance]} data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0`} />
+      <Dialog.Overlay className={`fixed inset-0 ${overlayBackgroundMap[background]} data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0`} />
       <Dialog.Content
-        data-appearance={appearance.toLowerCase()}
+        data-background={background.toLowerCase()}
         className={[
           'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
           'rounded-md',
-          contentAppearanceMap[appearance],
+          contentBackgroundMap[background],
           'p-6',
           widthMap[width],
           heightMap[height],
@@ -186,7 +186,7 @@ export const DialogField: React.FC<DialogFieldProps> = ({
                   </Dialog.Title>
                 )}
                 {description && (
-                  <Dialog.Description className={`text-sm ${appearance === "GLASS" ? 'text-gray-900' : 'text-gray-700'}`}>
+                  <Dialog.Description className={`text-sm ${background === "GLASS" ? 'text-gray-900' : 'text-gray-700'}`}>
                     {description}
                   </Dialog.Description>
                 )}
@@ -196,7 +196,7 @@ export const DialogField: React.FC<DialogFieldProps> = ({
                   <button
                     className={[
                       'ml-4 p-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-                      appearance === "GLASS"
+                      background === "GLASS"
                         ? 'text-gray-900 hover:bg-white/70'
                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                     ].join(' ')}

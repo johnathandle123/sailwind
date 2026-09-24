@@ -51,7 +51,7 @@ describe("SiteNav - group expand/collapse animation", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("uses the Doc Center transition: 300ms on cubic-bezier(0.32,0.72,0,1)", () => {
+  it("expands on a 300ms cubic-bezier(0.32,0.72,0,1) transition", () => {
     render(<SiteNav pages={pages} />);
     const { wrapper } = groupWrapper("Directory");
     expect(wrapper.className).toContain("transition-[grid-template-rows,opacity]");
