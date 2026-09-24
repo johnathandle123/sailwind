@@ -6,6 +6,7 @@ export * from './Tag'
 
 // Button components
 export * from './Button'
+export * from './MenuButton'
 
 // Card components
 export * from './Card'

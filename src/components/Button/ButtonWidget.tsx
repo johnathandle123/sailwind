@@ -14,6 +14,10 @@ type IconPosition = "START" | "END"
  * Maps to SAIL's a!buttonWidget() function
  */
 export interface ButtonWidgetProps {
+  /** Rendered after the label, for a trailing adornment such as a menu caret */
+  children?: React.ReactNode
+  /** Anything else is passed to the underlying <button>, for composition */
+  [key: string]: unknown
   /** Text to display on the button */
   label?: string
   /** Determines the button's appearance */
@@ -70,7 +74,12 @@ export interface ButtonWidgetProps {
  * Note: In SAIL, a!buttonWidget must be used within a!buttonArrayLayout.
  * For standalone use in React, wrap with ButtonArrayLayout component.
  */
-export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
+/**
+ * Forwards its ref and passes any extra props to the underlying <button>, so a primitive
+ * that needs to own the element can be given it — `DropdownMenu.Trigger asChild`, for one.
+ * That is how MenuButton reuses this button instead of reimplementing one.
+ */
+export const ButtonWidget = React.forwardRef<HTMLButtonElement, ButtonWidgetProps>(({
   label,
   style = "OUTLINE",
   color = "ACCENT",
@@ -87,8 +96,10 @@ export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
   saveInto,
   onClick,
   value,
-  className
-}) => {
+  className,
+  children,
+  ...rest
+}, ref) => {
   // Visibility control
   if (!showWhen) return null
 
@@ -279,6 +290,7 @@ export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
 
   return (
     <button
+      ref={ref}
       type={submit ? "submit" : "button"}
       onClick={handleClick}
       disabled={disabled || loadingIndicator}
@@ -286,6 +298,7 @@ export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
       style={inlineStyles}
       aria-label={accessibilityText || label || tooltip || (icon ? icon.replace(/-/g, ' ') : undefined)}
       title={tooltip}
+      {...rest}
     >
       {loadingIndicator && (
         <span className="animate-spin" aria-label="loading">⟳</span>
@@ -293,6 +306,9 @@ export const ButtonWidget: React.FC<ButtonWidgetProps> = ({
       {!loadingIndicator && IconElement && iconPosition === "START" && IconElement}
       {label && <span>{label}</span>}
       {!loadingIndicator && IconElement && iconPosition === "END" && IconElement}
+      {children}
     </button>
   )
-}
+})
+
+ButtonWidget.displayName = 'ButtonWidget'
