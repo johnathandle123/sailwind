@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageField } from "../ImageField";
@@ -60,11 +60,35 @@ describe("illustration image - arrowheads", () => {
 });
 
 describe("illustration image - unknown name", () => {
-  it("draws nothing, rather than throwing, for a name that is not in the list", () => {
-    const unknown = "NOT_AN_ILLUSTRATION" as IllustrationName;
-    expect(() => drawn(unknown)).not.toThrow();
-    const { container } = drawn(unknown);
-    expect(container.querySelector("svg")).toBeNull();
+  afterEach(() => vi.restoreAllMocks());
+
+  // The inherited names are the ones a plain object lookup would wrongly find
+  it.each(["NOT_AN_ILLUSTRATION", "", "constructor", "toString", "__proto__", "hasOwnProperty"])(
+    "draws nothing, rather than throwing, for the name %j",
+    (name) => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const unknown = name as IllustrationName;
+      expect(() => drawn(unknown)).not.toThrow();
+      const { container } = drawn(unknown);
+      expect(container.querySelector("svg")).toBeNull();
+    }
+  );
+
+  it("says which name was wrong, once, and lists the ones that work", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const typo = "TRIGERS" as IllustrationName;
+    const { rerender } = drawn(typo);
+    rerender(<ImageField images={[{ imageType: "illustration", illustration: typo }]} size="LARGE" />);
+    drawn(typo);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('"TRIGERS"');
+    expect(warn.mock.calls[0][0]).toContain("TRIGGERS");
+  });
+
+  it("does not warn for a name that is in the list", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    drawn("TRIGGERS");
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

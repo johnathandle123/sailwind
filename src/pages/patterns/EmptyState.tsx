@@ -5,9 +5,9 @@ import type { ButtonWidgetProps } from '../../components/Button/ButtonWidget'
 import { HeadingField } from '../../components/Heading/HeadingField'
 import { ImageField } from '../../components/Image/ImageField'
 import type { DocumentImageProps, IllustrationImageProps, WebImageProps } from '../../components/Image'
-import { RichTextDisplayField } from '../../components/RichText/RichTextDisplayField'
-import { TextItem } from '../../components/RichText/TextItem'
+import { isIllustrationName } from '../../components/Image/illustrations/illustrationSpecs'
 import type { SAILMarginSize } from '../../types/sail'
+import type { HeadingFieldProps } from '../../components/Heading/HeadingField'
 import { ChevronDown } from 'lucide-react'
 
 /**
@@ -36,10 +36,10 @@ import { ChevronDown } from 'lucide-react'
  *   equally; in a LARGE one the buttons keep their own widths and sit together.
  * - The card fills the width of whatever it is in
  *
- * Text is the same in every variant: the first line is a `HeadingField` (MEDIUM, SEMI_BOLD, so
- * it is a heading to a screen reader), the second `TextItem` STANDARD in SECONDARY, with the
- * snug line height rather than RichTextDisplayField's relaxed one. Only the picture changes size: LARGE draws it 400px wide,
- * SMALL 260px, and either shrinks to fit a narrower container.
+ * Text is the same in every variant: the first line is a `HeadingField` (MEDIUM, SEMI_BOLD, an
+ * `h3` unless `headingTag` says otherwise, so it is a heading to a screen reader), the second a
+ * `<p>` in the SECONDARY gray. Only the picture changes size: LARGE draws it 400px wide, SMALL
+ * 260px, and either shrinks to fit a narrower container.
  */
 
 export type EmptyStateSize = 'SMALL' | 'LARGE'
@@ -107,6 +107,11 @@ const IMAGE_MAX_HEIGHT: Record<EmptyStateSize, string> = {
 export interface EmptyStateProps {
   /** First line: what is missing, as a statement ("No test cases yet") */
   title: string
+  /**
+   * The level of the title's heading, so it fits the page it sits in (an empty state under an
+   * H2 section wants H3, one directly under the page title wants H2). Default: H3.
+   */
+  headingTag?: HeadingFieldProps['headingTag']
   /** Second line: why it is worth adding, or how to add it */
   description?: string
   /** The picture at the top: an illustration, a document image or a web image. Defaults to the NO_DATA illustration. */
@@ -207,6 +212,7 @@ export const ButtonLayout: React.FC<{
  */
 export const EmptyState: React.FC<EmptyStateProps> = ({
   title,
+  headingTag,
   description,
   image = NO_DATA_IMAGE,
   size = 'LARGE',
@@ -220,6 +226,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   if (!showWhen) return null
   const { width, gap, bottom } = LAYOUT[size]
   const isIllustration = 'imageType' in image && image.imageType === 'illustration'
+  // An illustration name that is not in the list draws nothing (and warns), so reserve no
+  // space for a picture: the words just start at the top of the card
+  const hasPicture = !(isIllustration && !isIllustrationName((image as IllustrationImageProps).illustration))
 
   return (
     <CardLayout
@@ -229,7 +238,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       marginBelow={marginBelow}
       className="w-full overflow-hidden text-center"
     >
-      {isIllustration ? (
+      {!hasPicture ? null : isIllustration ? (
         /* An illustration sits behind the words. It fills the width it is given, up to its own
            size, and fades out toward the bottom so nothing in it runs through the words. */
         <div
@@ -249,17 +258,28 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           under any other image */}
       <div
         className={`relative px-4 ${bottom}`}
-        style={isIllustration ? { paddingTop: `calc(min(100%, ${width}px) * ${CENTRE} + ${gap}px)` } : { paddingTop: 20 }}
+        style={
+          !hasPicture
+            ? { paddingTop: 24 }
+            : isIllustration
+              ? { paddingTop: `calc(min(100%, ${width}px) * ${CENTRE} + ${gap}px)` }
+              : { paddingTop: 20 }
+        }
       >
-        <HeadingField text={title} size="MEDIUM" fontWeight="SEMI_BOLD" align="CENTER" marginBelow="NONE" className="leading-tight" />
+        <HeadingField
+          text={title}
+          headingTag={headingTag}
+          size="MEDIUM"
+          fontWeight="SEMI_BOLD"
+          align="CENTER"
+          marginBelow="NONE"
+          className="leading-tight"
+        />
         {description && (
-          <RichTextDisplayField
-            align="CENTER"
-            marginAbove="NONE"
-            marginBelow="NONE"
-            className="mx-auto max-w-sm [&>div]:leading-snug"
-            value={[<TextItem key="secondary" text={description} color="SECONDARY" />]}
-          />
+          // The size and gray are TextItem's STANDARD and SECONDARY. A plain paragraph, rather than a
+          // RichTextDisplayField, so the line height is the size's own (21px) and does not depend on
+          // that component's inner markup
+          <p className="mx-auto max-w-sm text-center text-base text-gray-700">{description}</p>
         )}
         <ButtonLayout
           primaryButtons={primaryButtons}

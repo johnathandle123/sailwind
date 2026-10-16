@@ -436,3 +436,11 @@ export const ILLUSTRATIONS: Record<IllustrationName, IllustrationSpec> = {
     arrows: false,
   },
 }
+
+/**
+ * Whether `name` is one of the pre-baked illustrations. A plain `ILLUSTRATIONS[name]` lookup is
+ * not enough: names from outside TypeScript such as "constructor" or "toString" find values
+ * inherited from Object.prototype.
+ */
+export const isIllustrationName = (name: unknown): name is IllustrationName =>
+  typeof name === 'string' && Object.prototype.hasOwnProperty.call(ILLUSTRATIONS, name)

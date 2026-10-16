@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ILLUSTRATIONS } from './illustrationSpecs'
+import { ILLUSTRATIONS, isIllustrationName } from './illustrationSpecs'
 import type { IllustrationName, IllustrationTile, RadialSpec, StackSpec } from './illustrationSpecs'
 
 export interface IllustrationProps {
@@ -259,6 +259,16 @@ const StackPicture: React.FC<{ spec: StackSpec }> = ({ spec }) => (
   </>
 )
 
+const warned = new Set<string>()
+
+/** Warns once per unknown name, so a list of bad names does not flood the console */
+const warnUnknownIllustration = (name: unknown) => {
+  const key = String(name)
+  if (warned.has(key)) return
+  warned.add(key)
+  console.warn(`[sailwind] Unknown illustration "${key}"; nothing was drawn. Use one of: ${Object.keys(ILLUSTRATIONS).join(', ')}.`)
+}
+
 /**
  * Draws one of the pre-baked illustrations. ImageField draws it for an image of type
  * `illustration`; it is not exported from the library.
@@ -268,10 +278,14 @@ const StackPicture: React.FC<{ spec: StackSpec }> = ({ spec }) => (
  * edge of the picture; put it in a parent that clips if that matters.
  */
 export const Illustration: React.FC<IllustrationProps> = ({ name, showAnimation = true, className }) => {
-  const spec = ILLUSTRATIONS[name]
   // A name that is not in the list (a typo, or a value from outside TypeScript) draws nothing
-  // rather than throwing, so one bad name cannot blank the whole page
-  if (!spec) return null
+  // rather than throwing, so one bad name cannot blank the whole page. It says so once in the
+  // console, so the typo can still be found.
+  if (!isIllustrationName(name)) {
+    warnUnknownIllustration(name)
+    return null
+  }
+  const spec = ILLUSTRATIONS[name]
 
   return (
     <svg

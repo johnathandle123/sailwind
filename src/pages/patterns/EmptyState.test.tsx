@@ -104,10 +104,20 @@ describe('EmptyState', () => {
     expect(screen.queryByText('Add one to start')).not.toBeInTheDocument()
   })
 
-  it('makes the title a heading, and lays the second line out at a snug line height', () => {
+  it('makes the title a heading, level 3 unless told otherwise', () => {
+    const { rerender } = render(<EmptyState title="No items" description="Add one to start" />)
+    expect(screen.getByRole('heading', { name: 'No items', level: 3 })).toBeInTheDocument()
+    rerender(<EmptyState title="No items" headingTag="H2" />)
+    expect(screen.getByRole('heading', { name: 'No items', level: 2 })).toBeInTheDocument()
+  })
+
+  it('sets the second line in a paragraph at the size\'s own line height, not the relaxed one', () => {
     render(<EmptyState title="No items" description="Add one to start" />)
-    expect(screen.getByRole('heading', { name: 'No items' })).toBeInTheDocument()
-    expect(screen.getByText('Add one to start').closest('[class*="leading-snug"]')).not.toBeNull()
+    const description = screen.getByText('Add one to start')
+    expect(description.tagName).toBe('P')
+    expect(description).toHaveClass('text-base', 'text-gray-700')
+    // Nothing between it and the page may impose RichTextDisplayField's leading-relaxed
+    expect(description.closest('[class*="leading-"]')).toBeNull()
   })
 })
 
@@ -185,11 +195,17 @@ describe('EmptyState - image', () => {
     expect(container.querySelector('svg')).not.toHaveClass('sw-illustration-animated')
   })
 
-  it('still shows the words, and draws no picture, for an illustration name that is not in the list', () => {
+  it('still shows the words, draws no picture and reserves no space for one, for an illustration name that is not in the list', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const image = { imageType: 'illustration', illustration: 'NOT_AN_ILLUSTRATION' } as unknown as EmptyStateImage
     const { container } = render(<EmptyState title="Nothing here" image={image} />)
     expect(screen.getByText('Nothing here')).toBeInTheDocument()
     expect(container.querySelector('svg')).toBeNull()
+    // The words start near the top of the card, not under a picture that is not there
+    const words = screen.getByText('Nothing here').parentElement as HTMLElement
+    expect(words.style.paddingTop).toBe('24px')
+    expect(container.querySelector('.absolute')).toBeNull()
+    warn.mockRestore()
   })
 
   it('puts a document image above the words, in the flow, rather than behind them', () => {
